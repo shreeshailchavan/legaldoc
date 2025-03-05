@@ -1,6 +1,7 @@
 // src/components/Dashboard.jsx
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, resolvePath, useNavigate } from 'react-router-dom';
+
 import { 
   FilePen, 
   Upload, 
@@ -14,9 +15,13 @@ import {
 import BrowserLanguageSelector from './common/BrowserLanguageSelector';
 import { useBrowserTranslation } from './contexts/BrowserTranslationContext';
 import axios from 'axios'
+import { useResult } from './contexts/ResultContext';
 
 const Dashboard = () => {
+  
   const navigate = useNavigate();
+  const  { saveResult  } = useResult(); // Access context function
+
   const { currentLanguage } = useBrowserTranslation();
   const [darkMode, setDarkMode] = useState(() => 
     localStorage.getItem('darkMode') === 'true' || 
@@ -114,26 +119,26 @@ const Dashboard = () => {
       console.error("No file selected.");
       return;
     }
-  
+
     try {
       setIsUploading(true);
       setUploadProgress(0);
-  
+
       const formData = new FormData();
       formData.append("file", files[0]);
-  
+
       const authToken = localStorage.getItem("authToken");
-  
+
       if (!authToken) {
         console.error("Authentication token not found. Please log in.");
         alert("Please log in to upload files.");
         setIsUploading(false);
         return;
       }
-  
+
       console.log("Uploading file:", files[0].name);
       console.log("Auth Token:", authToken);
-  
+
       const response = await axios.post(
         "http://localhost:8000/api/users/upload/",
         formData,
@@ -150,15 +155,27 @@ const Dashboard = () => {
           },
         }
       );
-  
+
       console.log("File uploaded successfully:", response.data);
-  
+
       // Handle success response
       alert("File uploaded successfully!");
-      navigate('/simplified-result/:id')
+       const { file_id } = response.data;
+       console.log(file_id);
+       
+
+      console.log("saveResult function:", saveResult); // ✅ Debugging Log
+
+      if (typeof saveResult === "function") {
+        saveResult(file_id, response.data); // ✅ Ensure it's a function before calling
+      } else {
+        console.error("saveResult is not a function! Check context usage.");
+      }
+
+      navigate(`/simplified-result/${file_id}`);
     } catch (error) {
       console.error("Error uploading file:", error);
-  
+
       if (error.response) {
         // Server response with error message
         console.error("Server Error:", error.response.data);
@@ -174,8 +191,6 @@ const Dashboard = () => {
       setIsUploading(false);
     }
   };
-  
-
 
   // Start speech recognition
   const startSpeechRecognition = () => {

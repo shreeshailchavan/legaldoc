@@ -8,6 +8,7 @@ import WelcomePage from './components/WelcomePage';
 import { BrowserTranslationProvider } from './components/contexts/BrowserTranslationContext';
 import ErrorBoundary from './components/common/ErrorBoundry';
 import LanguageContext from './components/contexts/LanguageContext';
+import { ResultProvider } from './components/contexts/ResultContext';
 
 // Create a PrivateRoute wrapper component
 const PrivateRoute = ({ children }) => {
@@ -31,6 +32,7 @@ const App = () => {
         {!hasAcceptedTerms ? (
           <WelcomePage onAccept={acceptTerms} />
         ) : (
+          <ResultProvider>
           <Router>
             <Routes>
               <Route path="/register" element={<Register />} />
@@ -40,22 +42,23 @@ const App = () => {
                 element={
                   // <PrivateRoute>
                     <Dashboard />
-                  // </PrivateRoute>
-                }
-              />
+                    // </PrivateRoute>
+                  }
+                  />
               <Route 
                 path="/simplified-result/:id" 
                 element={
                   // <PrivateRoute>
-                 
-                    <SimplifiedResultPage />
-                 
+                  
+                  <SimplifiedResultPage />
+                  
                   // </PrivateRoute>
                 }
-              />
+                />
               <Route path="/" element={<Navigate to="/login" />} />
             </Routes>
           </Router>
+        </ResultProvider>
         )}
       </BrowserTranslationProvider>
     </ErrorBoundary>
