@@ -34,8 +34,8 @@ const Login = () => {
   const validate = () => {
     const newErrors = {};
     
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
     }
     
     if (!formData.password) {
@@ -58,28 +58,31 @@ const Login = () => {
       setIsSubmitting(true);
       
       // Call your backend API
-      const response = await axios.post('https://your-api-url.com/api/auth/login', {
-        email: formData.email,
+      const response = await axios.post('http://localhost:8000/api/users/login/', {
+        username: formData.username,
         password: formData.password
       });
+      
+      console.log(response);
       
       // Handle successful login
       localStorage.setItem('authToken', response.data.token);
       
       // If remember me is checked, store in localStorage, otherwise sessionStorage
       if (formData.rememberMe) {
-        localStorage.setItem('userEmail', formData.email);
+        localStorage.setItem('username', formData.username);
       } else {
-        sessionStorage.setItem('userEmail', formData.email);
+        sessionStorage.setItem('username', formData.username);
       }
+      console.log(localStorage.getItem('authToken'))
       
       navigate('/dashboard');
       
     } catch (error) {
       // Handle errors from the backend
-      if (error.response && error.response.status === 401) {
+      if (error.response && error.response.status === 400) {
         setErrors({
-          general: 'Invalid email or password'
+          general: 'Invalid username or password'
         });
       } else {
         setErrors({
@@ -127,18 +130,18 @@ const Login = () => {
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label className="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2" htmlFor="email">
-                  Email Address
+                  Usernmae
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   id="email"
-                  name="email"
-                  value={formData.email}
+                  name="username"
+                  value={formData.username}
                   onChange={handleChange}
                   className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white dark:border-gray-600 ${
                     errors.email ? 'border-red-500 focus:ring-red-200' : 'border-gray-300 focus:ring-blue-200'
                   }`}
-                  placeholder="Enter your email"
+                  placeholder="Enter your username"
                 />
                 {errors.email && (
                   <p className="text-red-500 text-xs mt-1">{errors.email}</p>

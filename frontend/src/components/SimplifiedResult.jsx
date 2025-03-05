@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useResult } from './contexts/ResultContext';
 import { 
   ArrowLeft, 
   Copy, 
@@ -25,12 +26,11 @@ const SimplifiedResultPage = () => {
   const [answer, setAnswer] = useState('');
   const [showAnswer, setShowAnswer] = useState(false);
 
-  // Text-to-Speech States
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [audioSource, setAudioSource] = useState(null);
-  const audioRef = useRef(null);
-
-  // Fetch document data
+  const { results } = useResult();
+  const result = results[id]; 
+  console.log(results)
+  console.log(result);
+  
   useEffect(() => {
     const fetchDocument = async () => {
       try {
@@ -43,65 +43,18 @@ const SimplifiedResultPage = () => {
             title: 'Dictated Text',
             dateProcessed: new Date(),
             simplificationLevel: 'Moderate',
-            originalText: `The aforementioned party of the first part, hereinafter referred to as "Tenant," hereby acknowledges and agrees to remit monthly compensation in the amount of one thousand five hundred dollars ($1,500.00) to the party of the second part, hereinafter referred to as "Landlord," for the temporary occupancy and utilization of the residential premises located at 123 Main Street, Apartment 4B, Cityville, State 12345, with said compensation to be remitted no later than the first (1st) calendar day of each month for the duration of the lease agreement, which shall commence on March 1, 2025 and terminate on February 28, 2026, unless otherwise extended or terminated pursuant to the provisions contained herein. Failure to remit payment in a timely manner may result in the imposition of a late fee in the amount of fifty dollars ($50.00) per day for each day payment is delinquent.`,
+            originalText: result.legal_res.original_text,
             
-            simplifiedText: `The Tenant agrees to pay the Landlord $1,500 monthly rent for the apartment at 123 Main Street, Apartment 4B, Cityville, State 12345. Rent is due on the 1st of each month during the lease period from March 1, 2025 to February 28, 2026. Late payments may result in a $50 daily late fee.`
+            simplifiedText: result.legal_res.simplified_text
           });
         } else {
           setDocumentData({
             title: 'Rental Agreement.pdf',
             dateProcessed: new Date(),
             simplificationLevel: 'Moderate',
-            originalText: `RENTAL AGREEMENT
-
-AGREEMENT made this 15th day of February, 2025, between ABC Property Management, LLC, a corporation organized and existing under the laws of the State, hereinafter referred to as "Landlord," and John Smith, an individual currently residing at 456 Previous Ave., Cityville, State 12345, hereinafter referred to as "Tenant."
-
-WITNESSETH:
-
-WHEREAS, Landlord is the owner of certain real property being, lying and situated in the City of Cityville, State, such real property having a street address of 123 Main Street, Apartment 4B, Cityville, State 12345, hereinafter referred to as the "Premises."
-
-WHEREAS, Landlord desires to lease the Premises to Tenant upon the terms and conditions as contained herein; and
-
-WHEREAS, Tenant desires to lease the Premises from Landlord on the terms and conditions as contained herein;
-
-NOW, THEREFORE, for and in consideration of the covenants and obligations contained herein and other good and valuable consideration, the receipt and sufficiency of which is hereby acknowledged, the parties hereto agree as follows:
-
-1. TERM. Landlord leases to Tenant and Tenant leases from Landlord the above described Premises together with any and all appurtenances thereto, for a term of twelve (12) months, such term beginning on March 1, 2025, and ending at 11:59 PM on February 28, 2026.
-
-2. RENT. The total rent for the term hereof is the sum of EIGHTEEN THOUSAND DOLLARS ($18,000.00) payable on the 1st day of each month of the term, in equal installments of ONE THOUSAND FIVE HUNDRED DOLLARS ($1,500.00). All such payments shall be made to Landlord at Landlord's address as set forth in the preamble to this Agreement on or before the due date and without demand.
-
-3. DAMAGE DEPOSIT. Upon the due execution of this Agreement, Tenant shall deposit with Landlord the sum of ONE THOUSAND FIVE HUNDRED DOLLARS ($1,500.00) receipt of which is hereby acknowledged by Landlord, as security for any damage caused to the Premises during the term hereof. Such deposit shall be returned to Tenant, without interest, and less any set off for damages to the Premises upon the termination of this Agreement.
-
-4. USE OF PREMISES. The Premises shall be used and occupied by Tenant and Tenant's immediate family, consisting of John Smith, Jane Smith (spouse), and Bobby Smith (child), exclusively, as a private single-family dwelling, and no part of the Premises shall be used at any time during the term of this Agreement by Tenant for the purpose of carrying on any business, profession, or trade of any kind, or for any purpose other than as a private single-family dwelling. Tenant shall not allow any other person, other than Tenant's immediate family or transient relatives and friends who are guests of Tenant, to use or occupy the Premises without first obtaining Landlord's written consent to such use. Tenant shall comply with any and all laws, ordinances, rules and orders of any and all governmental or quasi-governmental authorities affecting the cleanliness, use, occupancy and preservation of the Premises.`,
+            originalText: results[id].legal_res.original_text,
             
-            simplifiedText: `RENTAL AGREEMENT
-
-This agreement is made on February 15, 2025, between ABC Property Management, LLC ("Landlord") and John Smith ("Tenant").
-
-WHAT THIS MEANS:
-- The Landlord owns the property at 123 Main Street, Apartment 4B, Cityville, State 12345
-- The Landlord wants to rent this property to the Tenant
-- The Tenant wants to rent this property from the Landlord
-
-AGREEMENT TERMS:
-
-1. LEASE PERIOD
-The lease lasts for 12 months, starting March 1, 2025, and ending February 28, 2026.
-
-2. RENT
-Total rent: $18,000 for the entire lease
-Monthly payments: $1,500 due on the 1st of each month
-Payments must be made to the Landlord's address listed above.
-
-3. SECURITY DEPOSIT
-The Tenant must pay a $1,500 security deposit.
-This deposit will be returned without interest at the end of the lease, minus any costs for damages.
-
-4. USE OF PROPERTY
-- The property is for residential use only by John Smith and his immediate family (Jane Smith and Bobby Smith)
-- No business activities are allowed
-- Other people can't live there without the Landlord's written permission
-- The Tenant must follow all laws and regulations regarding the property`
+            simplifiedText:results[id].legal_res.simplified_text
           });
         }
         
