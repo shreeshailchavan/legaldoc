@@ -75,7 +75,7 @@ pip install -r requirements.txt
 
 💻 Installation & Setup
 
-git clone https://github.com/your-username/docufy.git
+[git clone https://github.com/shreeshailchavan/legaldoc.git
 cd docufy
 python main.py
 
