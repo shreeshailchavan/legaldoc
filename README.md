@@ -1,115 +1,120 @@
-📜 Docufy - AI-Powered Legal Document Simplification
+# Docufy 📜
 
-📌 Overview
+**AI-Powered Legal Document Simplification**
+## Overview 🔍
 
-Docufy is an AI-driven legal document simplification tool that helps users understand complex legal jargon with ease. It extracts text from legal documents, simplifies content, provides definitions for legal terms, and offers multilingual support—all while ensuring the integrity of the original meaning.
+Docufy is an AI-driven legal document simplification tool that transforms complex legal jargon into clear, accessible language. The platform extracts text from legal documents, simplifies content while preserving meaning, provides definitions for legal terms, and offers multilingual support.
 
-🌟 Key Features
+## Key Features ✨
 
-1️⃣ Legal Text Simplification
+### 📄 Legal Text Simplification
+- Transforms complex legal language into plain, understandable terms
+- Three simplification levels: Mild, Moderate, and Extreme
+- Preserves the original legal intent throughout the simplification process
 
-Breaks down complex legal language into simpler terms.
+### 👓 Dual-Mode View
+- Side-by-side comparison of original and simplified text
+- Allows users to compare changes while ensuring legal accuracy is maintained
 
-Supports different levels of simplification: Mild, Moderate, and Extreme.
+### 📚 Legal Term Explanations
+- Interactive hover/click functionality for instant definitions of legal jargon
+- Powered by Black's Law Dictionary API or a custom-built legal glossary
 
-Ensures the intent of the document remains unchanged.
+### 💬 Smart Query Module
+- Ask contextual questions about the document content
+- Receive AI-generated answers with proper citations to relevant sections
 
-2️⃣ Dual-Mode View
+### 🔍 OCR & Image-to-Text Extraction
+- Support for PDF, DOCX, and image uploads
+- Advanced OCR to extract text from scanned documents and images
 
-Side-by-side comparison of Original vs. Simplified legal text.
+### 🌐 Multilingual Support
+- Translate legal documents into multiple languages
+- Ensure global accessibility for non-English speakers
 
-Helps users understand changes while preserving legal accuracy.
+### 🔊 Text-to-Speech & Speech-to-Text
+- Convert simplified legal text into audio format
+- Use voice commands to query legal documents
 
-3️⃣ Legal Term Explanations
+### ⚠️ Risk Analysis & Clause Detection
+- Identify risky clauses and highlight potential legal concerns
+- Suggest alternative phrasing for risk mitigation
 
-Hover or click on legal jargon to see clear definitions.
+## System Architecture 🏗️
 
-Uses Black's Law Dictionary API or a custom-built glossary for accuracy.
+```mermaid
+graph TD
+    A[User] --> B[Upload Legal Document]
+    B --> C[OCR & Text Extraction]
+    C --> D[Database]
+    D --> E[Text Formatting]
+    E --> F[NLP-Based Simplification]
+    F --> G[Legal Term Explanations]
+    G --> H[Summarized Content]
+    H --> I[Query Module]
+    I --> J[Dual-Mode View]
+    J --> K[Multilingual Support]
+    K --> L[Speech-to-Text & Text-to-Speech]
+```
 
-4️⃣ Smart Query Module
+## Getting Started 🚀
 
-Allows users to ask contextual legal questions based on document content.
+### Prerequisites 📋
 
-Provides AI-generated answers with citations.
+- Node.js 16+
+- Python 3.9+
 
-5️⃣ OCR & Image-to-Text Extraction
+### Installation & Setup 💻
 
-Supports PDF, DOCX, and Image uploads.
+```bash
+# Clone the repository
+git clone https://github.com/shreeshailchavan/legaldoc.git
 
-Uses OCR to extract text from scanned documents and images.
+# Navigate to project directory
+cd docufy
 
-6️⃣ Multilingual Support
+# Install dependencies
+npm install
 
-Translates legal documents into multiple languages.
-
-Ensures global accessibility for non-English users.
-
-7️⃣ Text-to-Speech & Speech-to-Text
-
-Converts simplified legal text into audio format.
-
-Allows users to query legal documents using voice commands.
-
-8️⃣ Risk Analysis & Clause Detection
-
-Identifies risky clauses and highlights potential legal concerns.
-
-Suggests alternative clauses for risk mitigation.
-
-🏗️ System Architecture
-
-User → Uploads Legal Document → OCR & Text Extraction → Database
- → Text Formatting → NLP-Based Simplification → Legal Term Explanations
- → Summarized Content → Query Module → Dual-Mode View
- → Multilingual Support → Speech-to-Text & Text-to-Speech
-
-🚀 Getting Started
-
-🔧 Prerequisites
-
-Python 3.9+
-
-Dependencies: Install using the following command:
-
+# Install Python dependencies
 pip install -r requirements.txt
 
-💻 Installation & Setup
+# Start the development server
+npm run dev
+```
 
-[git clone https://github.com/shreeshailchavan/legaldoc.git
-cd docufy
-python main.py
+## Usage Guide 📖
 
-🛠️ Usage
+1. **Upload a document** - Support for PDF, DOCX, or Image formats
+2. **Select simplification level** - Choose between Mild, Moderate, or Extreme
+3. **Explore legal terms** - Hover or click on highlighted terms to see definitions
+4. **Ask questions** - Use the query module to get context-aware answers
+5. **Compare versions** - Use the dual-mode view to see original vs. simplified text
+6. **Access audio features** - Enable text-to-speech or use speech-to-text for queries
 
-Upload a document (PDF, DOCX, or Image).
+## Advanced Features 🔥
 
-Choose Simplification Level (Mild, Moderate, Extreme).
+| Feature | Description |
+|---------|-------------|
+| **AI-Powered Clause Generator** 📝 | Suggests missing or recommended contract clauses |
+| **Risk Highlighting System** ⚠️ | Flags potential legal risks in documents |
+| **Contract Comparison Module** 🔍 | Identifies changes between document versions |
+| **Offline Mode** 🌍 | Core functionality works without internet connection |
 
-Interact with legal terms via hover/click for explanations.
+## License 📄
 
-Use the query module to ask questions.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-View simplified vs. original text in Dual-Mode View.
+## Contributing 🤝
 
-Enable text-to-speech or speech-to-text if needed.
+Contributions are welcome! Please feel free to submit issues and pull requests.
 
-🔥 Out-of-the-Box Functionalities
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-AI-Powered Legal Clause Generator 📝 → Suggests missing contract clauses.
+---
 
-Risk Highlighting System ⚠️ → Flags potential legal risks.
-
-Contract Comparison Module 🔍 → Identifies changes in versions.
-
-Offline Mode 🌍 → Works without internet.
-
-📜 License
-
-MIT License - Use and modify freely! 😊
-
-📩 Contributing
-
-Contributions are welcome! Feel free to submit issues and pull requests.
-
-✨ Docufy: Making Legal Documents Simple for Everyone! 🚀
-
+✨ **Docufy: Making Legal Documents Simple for Everyone!** ✨
