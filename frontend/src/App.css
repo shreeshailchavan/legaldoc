@@ -65,4 +65,106 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
+
+  /* Hide Google Translate banner and prevent its space from affecting layout */
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+/* Reset body position that Google Translate might modify */
+body {
+  top: 0 !important;
+  position: static !important;
+}
+
+/* Hide the default Google Translate widget while keeping it functional */
+#google_translate_element {
+  position: absolute;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  display: block !important; /* Keep it in DOM */
+}
+
+/* Reset any Google Translate-added elements to prevent spacing issues */
+.skiptranslate {
+  display: none !important;
+}
+
+/* Make sure no extra space is created above your header */
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+}
+
+/* Prevent Google Translate from adding extra margin */
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* Ensure iframe does not create extra space */
+body > iframe[goog-translate-attribute] {
+  display: none !important;
+}
+
+/* Completely hide Google Translate UI elements */
+.goog-te-banner-frame,
+.goog-te-balloon-frame,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+/* Reset body positioning */
+body {
+  top: 0 !important;
+  position: static !important;
+}
+
+/* Hide the Google Translate element but keep it functional */
+#google_translate_element {
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  /* Keep it in DOM for functionality */
+  display: block !important;
+}
+
+/* Hide all additional elements added by Google Translate */
+.skiptranslate,
+.goog-te-gadget,
+.goog-te-menu-value {
+  font-size: 0 !important;
+}
+
+.goog-te-gadget .goog-te-combo {
+  margin: 0 !important;
+}
+
+/* Prevent Google Translate from shifting layout */
+.goog-text-highlight {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Ensure no extra space from translate frames */
+iframe.skiptranslate,
+.goog-te-banner-frame.skiptranslate,
+body > .skiptranslate {
+  display: none !important;
+}
+
+/* Hide all Google translate markup */
+font[color="#000000"] {
+  display: none !important;
+}
 }

@@ -1,5 +1,4 @@
-// src/components/Dashboard.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   FilePen, 
@@ -9,10 +8,16 @@ import {
   LogOut,
   Moon,
   Sun,
-  Mic
+  Mic,
+  HelpCircle
 } from 'lucide-react';
+import { Steps } from 'intro.js-react';
+import 'intro.js/introjs.css';
 import BrowserLanguageSelector from './common/BrowserLanguageSelector';
 import { useBrowserTranslation } from './contexts/BrowserTranslationContext';
+
+
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -34,6 +39,67 @@ const Dashboard = () => {
     savedTime: 0,
     wordsSimplified: 0
   });
+
+  
+
+  // Intro.js state
+  const [introEnabled, setIntroEnabled] = useState(false);
+  const [initialIntro, setInitialIntro] = useState(true);
+
+  // Intro.js steps
+  const introSteps = [
+    {
+      element: '.sidebar-intro',
+      intro: 'This is the sidebar. Here you can navigate through different sections of the app, toggle dark mode, and change languages.',
+      position: 'right'
+    },
+    {
+      element: '.upload-section-intro',
+      intro: 'Upload your legal documents here. You can drag and drop files or click to browse. Choose the simplification level that suits your needs.',
+      position: 'top'
+    },
+    {
+      element: '.speech-input-intro',
+      intro: 'Use speech recognition to dictate text directly. Great for hands-free document input.',
+      position: 'left'
+    },
+    {
+      element: '.stats-section-intro',
+      intro: 'Track your document simplification progress. See total documents, time saved, and words simplified.',
+      position: 'top'
+    },
+    {
+      element: '.recent-docs-intro',
+      intro: 'View your recently processed documents. You can view details or delete documents from here.',
+      position: 'top'
+    },
+    {
+      element: '.tips-section-intro',
+      intro: 'Quick tips and features of the Legal Document Simplifier app.',
+      position: 'left'
+    }
+  ];
+
+  // Check if it's first-time user
+  useEffect(() => {
+    const hasSeenIntro = localStorage.getItem('hasSeenIntro');
+    if (!hasSeenIntro && initialIntro) {
+      setIntroEnabled(true);
+    }
+  }, []);
+
+  // Handle intro completion
+  const onIntroComplete = () => {
+    setIntroEnabled(false);
+    setInitialIntro(false);
+    localStorage.setItem('hasSeenIntro', 'true');
+  };
+
+  // Manually trigger intro
+  const startIntro = () => {
+    setIntroEnabled(true);
+  };
+
 
   // Apply dark mode class to body
   useEffect(() => {
@@ -212,10 +278,22 @@ const Dashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Intro.js Steps */}
+      <Steps
+        enabled={introEnabled}
+        steps={introSteps}
+        initialStep={0}
+        onExit={onIntroComplete}
+        onComplete={onIntroComplete}
+      />
+
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} transition-all duration-300 ease-in-out bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen`}>
+      <aside 
+        className={`${sidebarOpen ? 'w-64' : 'w-20'} sidebar-intro transition-all duration-300 ease-in-out bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-screen relative`}
+      >
         <div className="h-full flex flex-col justify-between">
           <div>
+            {/* App Logo/Name */}
             <div className="p-4 flex items-center justify-between">
               {sidebarOpen ? (
                 <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">
@@ -224,27 +302,23 @@ const Dashboard = () => {
               ) : (
                 <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">LS</h1>
               )}
+              
+              {/* Sidebar Toggle Button */}
               <button 
                 onClick={toggleSidebar}
                 className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
               >
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {sidebarOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
                   ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                  )}
-                </svg>
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  {sidebarOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                   )}
                 </svg>
               </button>
             </div>
             
+            {/* Navigation Menu */}
             <nav className="mt-6">
               <ul className="space-y-2 px-4">
                 {menuItems.map((item) => (
@@ -254,9 +328,7 @@ const Dashboard = () => {
                       className="flex items-center p-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                       <span className="mr-3">{item.icon}</span>
-                      {sidebarOpen && (
-                        <span>{item.name}</span>
-                      )}
+                      {sidebarOpen && <span>{item.name}</span>}
                     </Link>
                   </li>
                 ))}
@@ -264,12 +336,15 @@ const Dashboard = () => {
             </nav>
           </div>
           
+          {/* Sidebar Footer */}
           <div className="p-4 mt-auto">
             {sidebarOpen && (
               <div className="mb-4">
                 <BrowserLanguageSelector />
               </div>
             )}
+            
+            {/* Dark Mode Toggle */}
             <div className="flex items-center mb-4">
               <button
                 onClick={toggleDarkMode}
@@ -284,20 +359,30 @@ const Dashboard = () => {
               )}
             </div>
             
+            {/* Logout Button */}
             <button
               onClick={handleLogout}
               className="flex items-center w-full p-3 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <LogOut size={20} />
-              {sidebarOpen && (
-                <span className="ml-3">Logout</span>
-              )}
+              {sidebarOpen && <span className="ml-3">Logout</span>}
             </button>
           </div>
         </div>
+
+        {/* Help/Intro Tour Button */}
+        <div className="absolute bottom-4 right-4">
+          <button 
+            onClick={startIntro}
+            className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"
+            title="Show App Tour"
+          >
+            <HelpCircle size={20} />
+          </button>
+        </div>
       </aside>
-      
-      {/* Main Content */}
+
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Navigation Bar */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 py-4 px-6 flex items-center justify-between">
@@ -305,12 +390,13 @@ const Dashboard = () => {
             Dashboard
           </h1>
           
+          {/* Top Navigation Right Side */}
           <div className="flex items-center space-x-4">
-            {!sidebarOpen && (
-              <BrowserLanguageSelector />
-            )}
+            {!sidebarOpen && <BrowserLanguageSelector />}
+            
+            {/* Speech Input Button */}
             <button 
-              className="flex items-center justify-center h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg transition duration-150 ease-in-out"
+              className="flex items-center justify-center h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg transition duration-150 ease-in-out speech-input-intro"
               onClick={startSpeechRecognition}
               disabled={isRecording}
             >
@@ -318,6 +404,7 @@ const Dashboard = () => {
               <span>Speech Input</span>
             </button>
             
+            {/* User Profile */}
             <div className="relative">
               <button className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-700 dark:text-gray-300">
                 <span className="text-sm font-medium">JD</span>
@@ -325,25 +412,32 @@ const Dashboard = () => {
             </div>
           </div>
         </header>
-        
-        {/* Main Content Area */}
+
+        {/* Main Content Scrollable Area */}
         <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6">
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 stats-section-intro">
+            {/* Total Documents */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Total Documents
               </span>
-              <span className="text-3xl font-bold text-gray-800 dark:text-white mt-2">{stats.totalDocuments}</span>
+              <span className="text-3xl font-bold text-gray-800 dark:text-white mt-2">
+                {stats.totalDocuments}
+              </span>
             </div>
             
+            {/* Simplified Today */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Simplified Today
               </span>
-              <span className="text-3xl font-bold text-gray-800 dark:text-white mt-2">{stats.simplifiedToday}</span>
+              <span className="text-3xl font-bold text-gray-800 dark:text-white mt-2">
+                {stats.simplifiedToday}
+              </span>
             </div>
             
+            {/* Time Saved */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Time Saved
@@ -353,6 +447,7 @@ const Dashboard = () => {
               </span>
             </div>
             
+            {/* Words Simplified */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 flex flex-col">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Words Simplified
@@ -362,10 +457,10 @@ const Dashboard = () => {
               </span>
             </div>
           </div>
-          
-          {/* Speech Recognition Section (conditionally shown) */}
-          {isRecording || speechText ? (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+
+          {/* Speech Recognition Section */}
+          {(isRecording || speechText) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8 speech-input-intro">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
                   Speech Recognition
@@ -407,12 +502,12 @@ const Dashboard = () => {
                 )}
               </div>
             </div>
-          ) : null}
-          
+          )}
+
           {/* Upload and Processing Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             {/* Upload Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2 upload-section-intro">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
                 Upload Document
               </h2>
@@ -508,7 +603,7 @@ const Dashboard = () => {
             </div>
             
             {/* Tips Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 tips-section-intro">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
                 Tips & Features
               </h2>
@@ -583,7 +678,7 @@ const Dashboard = () => {
           </div>
           
           {/* Recent Documents */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow recent-docs-intro">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
                 Recent Documents

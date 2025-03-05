@@ -5,6 +5,38 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Docufy</title>
+    
+    <!-- Inline critical CSS to hide Google Translate elements immediately -->
+    <style>  
+      #google_translate_element {
+        position: fixed !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        height: 0 !important;
+        width: 0 !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        display: block !important;
+      }
+      .goog-te-banner-frame {
+        display: none !important;
+      }
+      body {
+        top: 0 !important;
+      }
+    </style>
+    
+    <!-- Google Translate Script - Move to end of body -->
+  </head>
+  <body>
+    <!-- Place the container at the end of body, not at the beginning -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Hidden Google Translate element at the end of the body -->
+    <div id="google_translate_element" aria-hidden="true"></div>
+    
     <!-- Google Translate Script -->
     <script type="text/javascript">
       function googleTranslateElementInit() {
@@ -20,10 +52,5 @@
       }
     </script>
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-  </head>
-  <body>
-    <div id="google_translate_element"></div>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

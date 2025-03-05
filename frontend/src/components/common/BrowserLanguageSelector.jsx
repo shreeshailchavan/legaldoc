@@ -1,82 +1,121 @@
-// src/components/common/BrowserLanguageSelector.jsx
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useBrowserTranslation } from '../contexts/BrowserTranslationContext';
-import { Globe } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 
-const BrowserLanguageSelector = () => {
-  const { 
-    currentLanguage, 
-    changeLanguage, 
-    supportedLanguages, 
-    getCurrentLanguageObject,
-    isInGoogleTranslate
-  } = useBrowserTranslation();
-  
+const BrowserLanguageSelector = ({ compact = false }) => {
+  const { languages, currentLanguage, changeLanguage, isTranslateReady } = useBrowserTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const [localReady, setLocalReady] = useState(false);
 
-  const toggleDropdown = () => {
-    setIsOpen(!isOpen);
-  };
-
-  // Close dropdown when clicking outside
+  // Additional check to ensure we can proceed even if context doesn't report ready
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
+    // Try to find Google Translate element
+    const checkGoogleTranslate = () => {
+      if (document.querySelector('.goog-te-combo') || 
+          (window.google && window.google.translate)) {
+        setLocalReady(true);
+        return true;
       }
+      return false;
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    // Check immediately
+    if (!checkGoogleTranslate()) {
+      // Set up a retry mechanism
+      const interval = setInterval(() => {
+        if (checkGoogleTranslate()) {
+          clearInterval(interval);
+        }
+      }, 500);
+      
+      // Clear interval after 5 seconds max to prevent infinite checking
+      setTimeout(() => {
+        clearInterval(interval);
+        // Force enable after timeout
+        setLocalReady(true);
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
   }, []);
-
+  
+  const toggleDropdown = () => setIsOpen(!isOpen);
+  
   const handleLanguageChange = (langCode) => {
-    changeLanguage(langCode);
+    try {
+      // Try multiple methods to change language
+      
+      // Method 1: Direct Google Translate element
+      const selectElement = document.querySelector('.goog-te-combo');
+      if (selectElement) {
+        selectElement.value = langCode;
+        selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        // Update language in context
+        if (typeof changeLanguage === 'function') {
+          changeLanguage(langCode);
+        }
+        
+        setIsOpen(false);
+        return;
+      }
+      
+      // Method 2: Cookies
+      const domain = window.location.hostname;
+      document.cookie = `googtrans=/en/${langCode}; path=/; domain=${domain}`;
+      document.cookie = `googtrans=/en/${langCode}; path=/; domain=.${domain}`;
+      
+      // Method 3: Reload as last resort
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error changing language:', error);
+      
+      // Fallback - force reload with cookie
+      document.cookie = `googtrans=/en/${langCode}; path=/;`;
+      window.location.reload();
+    }
+    
     setIsOpen(false);
   };
 
-  const currentLang = getCurrentLanguageObject();
+  // Find current language name
+  const currentLangName = languages.find(lang => lang.code === currentLanguage)?.name || 'English';
+
+  // Use either context readiness state or our local detection
+  const ready = isTranslateReady || localReady;
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button 
+    <div className="relative">
+      <button
         onClick={toggleDropdown}
-        className="flex items-center space-x-1 px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors duration-200"
-        aria-expanded={isOpen}
-        aria-haspopup="listbox"
+        className={`flex items-center justify-between rounded-md bg-gray-100 dark:bg-gray-700 
+          ${compact ? 'px-2 py-1 text-sm' : 'px-3 py-2'} 
+          hover:bg-gray-200 dark:hover:bg-gray-600
+          text-gray-700 dark:text-gray-300 transition-colors duration-150 w-full`}
       >
-        <Globe size={16} className="text-gray-600 dark:text-gray-300" />
-        <span className="text-sm text-gray-700 dark:text-gray-300">{currentLang.nativeName}</span>
-        <svg className="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-        </svg>
+        <span className={compact ? 'mr-1' : 'mr-2'}>
+          {compact ? currentLanguage.toUpperCase() : currentLangName}
+        </span>
+        <ChevronDown size={compact ? 14 : 16} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 py-1 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-50 border border-gray-200 dark:border-gray-700">
-          <ul 
-            className="py-1 max-h-60 overflow-y-auto" 
-            role="listbox"
-            aria-activedescendant={currentLanguage}
-          >
-            {supportedLanguages.map((language) => (
-              <li 
-                key={language.code}
-                id={language.code}
-                role="option"
-                aria-selected={currentLanguage === language.code}
-                className={`px-4 py-2 text-sm cursor-pointer flex justify-between items-center
-                  ${currentLanguage === language.code 
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                onClick={() => handleLanguageChange(language.code)}
-              >
-                <span>{language.nativeName}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">{language.name}</span>
+        <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+          <ul className="py-1">
+            {languages.map((language) => (
+              <li key={language.code}>
+                <button
+                  onClick={() => handleLanguageChange(language.code)}
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <span>{language.name}</span>
+                  {currentLanguage === language.code && (
+                    <Check size={16} className="text-blue-600 dark:text-blue-400" />
+                  )}
+                </button>
               </li>
             ))}
           </ul>

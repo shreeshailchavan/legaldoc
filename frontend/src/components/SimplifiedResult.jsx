@@ -1,13 +1,16 @@
 // src/components/SimplifiedResultPage.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { 
   ArrowLeft, 
   Copy, 
   Download, 
   Printer, 
   MessageSquare, 
-  Check
+  Check,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 
 const SimplifiedResultPage = () => {
@@ -22,6 +25,12 @@ const SimplifiedResultPage = () => {
   const [answer, setAnswer] = useState('');
   const [showAnswer, setShowAnswer] = useState(false);
 
+  // Text-to-Speech States
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audioSource, setAudioSource] = useState(null);
+  const audioRef = useRef(null);
+
+  // Fetch document data
   useEffect(() => {
     const fetchDocument = async () => {
       try {
@@ -99,7 +108,6 @@ This deposit will be returned without interest at the end of the lease, minus an
         setLoading(false);
       } catch (error) {
         console.error('Error fetching document:', error);
-        console.log('Failed to load document. Please try again.');
         setLoading(false);
       }
     };
@@ -107,6 +115,103 @@ This deposit will be returned without interest at the end of the lease, minus an
     fetchDocument();
   }, [id]);
 
+  // Text-to-Speech Handler (Backend Route)
+  const handleTextToSpeech = async (text, mode = 'simplified') => {
+    // Stop any ongoing speech
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    try {
+      // Determine which text to use
+      const textToConvert = mode === 'simplified' 
+        ? documentData.simplifiedText 
+        : documentData.originalText;
+
+      // Call backend text-to-speech route
+      const response = await axios.post('/api/text-to-speech', 
+        { 
+          text: textToConvert,
+          voice: 'default', 
+          language: 'en-US'
+        },
+        { 
+          responseType: 'blob' 
+        }
+      );
+
+      // Create audio blob URL
+      const audioBlob = new Blob([response.data], { type: 'audio/mp3' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Set audio source and play
+      setAudioSource(audioUrl);
+      setIsSpeaking(true);
+
+      // Create audio element
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      audio.play().catch(error => {
+        console.error('Error playing audio:', error);
+        setIsSpeaking(false);
+      });
+
+    } catch (error) {
+      console.error('Text-to-Speech conversion failed:', error);
+      
+      // Fallback to browser speech synthesis if backend fails
+      fallbackBrowserSpeech(text);
+    }
+  };
+
+  // Fallback Browser Speech Synthesis
+  const fallbackBrowserSpeech = (text) => {
+    // Check if browser supports speech synthesis
+    if ('speechSynthesis' in window) {
+      // Stop any ongoing speech
+      window.speechSynthesis.cancel();
+
+      // Create speech utterance
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Optional: Customize voice, rate, pitch
+      utterance.rate = 0.9; 
+      utterance.pitch = 1; 
+
+      // Event listeners
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      // Speak the text
+      window.speechSynthesis.speak(utterance);
+    } else {
+      console.error('Browser does not support speech synthesis');
+    }
+  };
+
+  // Stop Speech
+  const stopSpeech = () => {
+    // Stop backend audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsSpeaking(false);
+      URL.revokeObjectURL(audioSource);
+    }
+
+    // Stop browser speech synthesis
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
+  // Copy Text Handler
   const handleCopyText = (text) => {
     navigator.clipboard.writeText(text)
       .then(() => {
@@ -118,6 +223,7 @@ This deposit will be returned without interest at the end of the lease, minus an
       });
   };
 
+  // Download Handler
   const handleDownload = () => {
     const element = document.createElement('a');
     const textToDownload = documentData.simplifiedText;
@@ -129,6 +235,7 @@ This deposit will be returned without interest at the end of the lease, minus an
     document.body.removeChild(element);
   };
 
+  // Print Handler
   const handlePrint = () => {
     const textToPrint = documentData.simplifiedText;
     
@@ -163,6 +270,7 @@ This deposit will be returned without interest at the end of the lease, minus an
     }, 250);
   };
 
+  // Ask Question Handler
   const askQuestion = async () => {
     if (!question.trim()) {
       console.log('Please enter a question first.');
@@ -197,6 +305,7 @@ This deposit will be returned without interest at the end of the lease, minus an
     }
   };
 
+  // Loading State
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -213,6 +322,7 @@ This deposit will be returned without interest at the end of the lease, minus an
     );
   }
 
+  // Document Not Found State
   if (!documentData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -234,6 +344,7 @@ This deposit will be returned without interest at the end of the lease, minus an
     );
   }
 
+  // Main Render
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
@@ -283,8 +394,7 @@ This deposit will be returned without interest at the end of the lease, minus an
             </button>
             <button
               onClick={() => setViewMode('original')}
-              className={`px-3 py-1.5 rounded-lg text-// src/components/SimplifiedResultPage.jsx (continued)
-sm font-medium ${
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
                 viewMode === 'original' 
                   ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200' 
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -304,7 +414,38 @@ sm font-medium ${
             </button>
           </div>
           
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 items-center">
+            {/* Text-to-Speech Buttons */}
+            <div className="flex items-center space-x-2">
+              {isSpeaking ? (
+                <button
+                  onClick={stopSpeech}
+                  className="flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900"
+                >
+                  <VolumeX size={16} className="mr-1.5" />
+                  Stop
+                </button>
+              ) : (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleTextToSpeech(documentData.simplifiedText, 'simplified')}
+                    className="flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900"
+                  >
+                    <Volume2 size={16} className="mr-1.5" />
+                    Speak Simplified
+                  </button>
+                  <button
+                    onClick={() => handleTextToSpeech(documentData.originalText, 'original')}
+                    className="flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900"
+                  >
+                    <Volume2 size={16} className="mr-1.5" />
+                    Speak Original
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
             <button
               onClick={() => handleCopyText(documentData.simplifiedText)}
               className="flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"

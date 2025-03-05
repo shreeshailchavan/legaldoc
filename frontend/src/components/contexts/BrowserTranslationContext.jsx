@@ -1,147 +1,167 @@
-// src/contexts/BrowserTranslationContext.jsx
-import { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 
-// List of supported languages
-export const supportedLanguages = [
-  { code: 'en', name: 'English', nativeName: 'English' },
-  { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी' },
-  { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
-  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' },
-  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
-  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
-  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
-  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
-  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ' },
-  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
-  { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ' },
-  { code: 'as', name: 'Assamese', nativeName: 'অসমীয়া' },
-  { code: 'sd', name: 'Sindhi', nativeName: 'سنڌي' },
-  { code: 'ur', name: 'Urdu', nativeName: 'اردو' }
-];
-
-// Create the context
 const BrowserTranslationContext = createContext();
 
-// Hook to use the context
-export const useBrowserTranslation = () => {
-  const context = useContext(BrowserTranslationContext);
-  if (!context) {
-    throw new Error('useBrowserTranslation must be used within a BrowserTranslationProvider');
-  }
-  return context;
-};
+export const useBrowserTranslation = () => useContext(BrowserTranslationContext);
 
-// The provider component
 export const BrowserTranslationProvider = ({ children }) => {
-  // Check if we're in a Google translated page
-  const isInGoogleTranslatedPage = () => {
-    return window.location.hostname.includes('translate.goog') || 
-           window.location.href.includes('translate.google') ||
-           document.documentElement.classList.contains('translated-ltr') ||
-           document.documentElement.classList.contains('translated-rtl');
-  };
-  
-  // Get the original URL (not the Google Translate URL)
-  const getOriginalUrl = () => {
-    if (window.location.hostname.includes('translate.goog')) {
-      // Extract original URL from translate.goog URL format
-      const currentUrl = window.location.href;
-      const urlParts = currentUrl.split('_x_tr_');
-      if (urlParts.length > 1) {
-        const originalUrlPart = urlParts[0].replace('https://translate.goog/', 'https://');
-        return originalUrlPart;
-      }
-    }
-    
-    // If we can't determine the original URL, return the current URL
-    return window.location.href;
-  };
-  
-  // Initial state setup - detect if we're in a translated page
   const [currentLanguage, setCurrentLanguage] = useState(() => {
-    // If we're in a Google translated page, try to determine the language
-    if (isInGoogleTranslatedPage()) {
-      // Try to extract language from URL
-      const matches = window.location.href.match(/_x_tr_sl=en&_x_tr_tl=([a-z]{2})/);
-      if (matches && matches[1]) {
-        return matches[1];
-      }
-      
-      // Fallback to stored preference
-      return localStorage.getItem('appLanguage') || 'en';
-    }
-    
-    // Not in a translated page, use stored preference or browser language
-    return localStorage.getItem('appLanguage') || 
-           navigator.language.split('-')[0] || 
-           'en';
+    // Check cookie for existing language preference
+    const match = document.cookie.match(/googtrans=\/en\/([^;]+)/);
+    return match && match[1] ? match[1] : 'en';
   });
+  
+  const [isTranslateReady, setIsTranslateReady] = useState(false);
+  
+  const languages = [
+    { code: 'en', name: 'English' },
+    { code: 'hi', name: 'हिन्दी (Hindi)' },
+    { code: 'mr', name: 'मराठी (Marathi)' },
+    { code: 'gu', name: 'ગુજરાતી (Gujarati)' },
+    { code: 'te', name: 'తెలుగు (Telugu)' },
+    { code: 'ta', name: 'தமிழ் (Tamil)' },
+    { code: 'kn', name: 'ಕನ್ನಡ (Kannada)' },
+    { code: 'ml', name: 'മലയാളം (Malayalam)' },
+    { code: 'pa', name: 'ਪੰਜਾਬੀ (Punjabi)' },
+    { code: 'bn', name: 'বাংলা (Bengali)' },
+    { code: 'or', name: 'ଓଡ଼ିଆ (Odia)' },
+    { code: 'as', name: 'অসমীয়া (Assamese)' },
+    { code: 'sd', name: 'سنڌي (Sindhi)' },
+    { code: 'ur', name: 'اردو (Urdu)' }
+  ];
 
-  // Save language preference to localStorage
+  // Initialize Google Translate check
   useEffect(() => {
-    localStorage.setItem('appLanguage', currentLanguage);
-  }, [currentLanguage]);
+    // Function to check if Google Translate is ready
+    const checkGoogleTranslate = () => {
+      if (document.querySelector('.goog-te-combo') || 
+          (window.google && window.google.translate)) {
+        setIsTranslateReady(true);
+        return true;
+      }
+      return false;
+    };
+    
+    // Initial check
+    if (checkGoogleTranslate()) return;
+    
+    // Set up observer for when Google Translate adds elements
+    const observer = new MutationObserver((mutations) => {
+      if (checkGoogleTranslate()) {
+        observer.disconnect();
+      }
+    });
+    
+    // Start observing the body for changes
+    observer.observe(document.body, { 
+      childList: true, 
+      subtree: true 
+    });
+    
+    // Fallback - check periodically
+    const interval = setInterval(() => {
+      if (checkGoogleTranslate()) {
+        clearInterval(interval);
+      }
+    }, 1000);
+    
+    // Set a timeout to force readiness after 5 seconds
+    setTimeout(() => {
+      clearInterval(interval);
+      setIsTranslateReady(true);
+    }, 5000);
+    
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
+  }, []);
 
-  // Function to change the current language
-  const changeLanguage = (langCode) => {
-    // Validate that it's a supported language
-    if (supportedLanguages.some(lang => lang.code === langCode)) {
-      setCurrentLanguage(langCode);
-      
-      // If switching to English and we're in a translated page, go back to original
-      if (langCode === 'en' && isInGoogleTranslatedPage()) {
-        window.location.href = getOriginalUrl();
+  // Function to detect language changes
+  useEffect(() => {
+    const detectLanguageChange = () => {
+      // Method 1: Check cookie
+      const match = document.cookie.match(/googtrans=\/en\/([^;]+)/);
+      if (match && match[1] && match[1] !== currentLanguage) {
+        setCurrentLanguage(match[1]);
         return;
       }
       
-      // If switching to a non-English language, redirect to Google Translate
-      if (langCode !== 'en') {
-        // Show confirmation dialog first
-        const langObj = supportedLanguages.find(lang => lang.code === langCode);
-        if (window.confirm(`This will redirect you to a Google Translated version of this page in ${langObj?.name || langCode}. Continue?`)) {
-          // Store language preference before redirect
-          localStorage.setItem('appLanguage', langCode);
-          
-          // Get current URL (or original URL if we're already in a translated page)
-          let currentUrl = isInGoogleTranslatedPage() ? getOriginalUrl() : window.location.href;
-        
-          // Create Google Translate URL
-          const translateUrl = `https://translate.google.com/translate?sl=en&tl=${langCode}&u=${encodeURIComponent(currentUrl)}`;
-          
-          // Redirect to Google Translate
-          window.location.href = translateUrl;
+      // Method 2: Check HTML lang attribute
+      const htmlLang = document.documentElement.lang;
+      if (htmlLang && htmlLang !== 'en' && htmlLang !== currentLanguage) {
+        setCurrentLanguage(htmlLang);
+      }
+    };
+    
+    // Set up observer for attribute changes on html element
+    const observer = new MutationObserver(detectLanguageChange);
+    observer.observe(document.documentElement, { 
+      attributes: true, 
+      attributeFilter: ['lang'] 
+    });
+    
+    // Also check periodically (some changes might not trigger observer)
+    const interval = setInterval(detectLanguageChange, 2000);
+    
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
+  }, [currentLanguage]);
+
+  // Function to change language
+  const changeLanguage = (langCode) => {
+    if (langCode === currentLanguage) return;
+    
+    try {
+      // Update internal state
+      setCurrentLanguage(langCode);
+      
+      // Method 1: Try using Google Translate element
+      const selectElement = document.querySelector('.goog-te-combo');
+      if (selectElement) {
+        selectElement.value = langCode;
+        selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+        return;
+      }
+      
+      // Method 2: Try direct API
+      if (window.google && window.google.translate) {
+        if (window.google.translate.TranslateElement) {
+          window.google.translate.TranslateElement({
+            pageLanguage: 'en',
+            includedLanguages: 'en,hi,mr,gu,te,ta,kn,ml,pa,bn,or,as,sd,ur',
+            autoDisplay: false
+          }, 'google_translate_element');
         }
       }
+      
+      // Method 3: Use cookies
+      const domain = window.location.hostname;
+      document.cookie = `googtrans=/en/${langCode}; path=/; domain=${domain}`;
+      document.cookie = `googtrans=/en/${langCode}; path=/; domain=.${domain}`;
+      document.cookie = `googtrans=/en/${langCode}; path=/`;
+      
+      // If all else fails, reload the page (last resort)
+      if (!selectElement && (!window.google || !window.google.translate)) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error changing language:', error);
     }
   };
 
-  // Function to get the current language object
-  const getCurrentLanguageObject = () => {
-    return supportedLanguages.find(lang => lang.code === currentLanguage) || supportedLanguages[0];
-  };
-
-  // Check if we're in Google Translate
-  const [isInGoogleTranslate, setIsInGoogleTranslate] = useState(isInGoogleTranslatedPage());
-  
-  // Update flag when we detect Google Translate
-  useEffect(() => {
-    setIsInGoogleTranslate(isInGoogleTranslatedPage());
-  }, [currentLanguage]);
-
-  // Prepare the context value
-  const value = {
-    currentLanguage,
-    changeLanguage,
-    supportedLanguages,
-    getCurrentLanguageObject,
-    isInGoogleTranslate
-  };
-
   return (
-    <BrowserTranslationContext.Provider value={value}>
+    <BrowserTranslationContext.Provider 
+      value={{
+        currentLanguage,
+        changeLanguage,
+        isTranslateReady,
+        languages
+      }}
+    >
       {children}
     </BrowserTranslationContext.Provider>
   );
 };
-
-export default BrowserTranslationContext;
