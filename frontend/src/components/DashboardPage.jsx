@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import BrowserLanguageSelector from './common/BrowserLanguageSelector';
 import { useBrowserTranslation } from './contexts/BrowserTranslationContext';
+import axios from 'axios'
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -108,47 +109,73 @@ const Dashboard = () => {
     localStorage.removeItem('authToken');
     navigate('/login');
   };
-
   const handleFileUpload = async (files) => {
-    if (!files || files.length === 0) return;
-    
+    if (!files || files.length === 0) {
+      console.error("No file selected.");
+      return;
+    }
+  
     try {
       setIsUploading(true);
       setUploadProgress(0);
-      
-      // Simulate progress for demo purposes
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 99) {
-            clearInterval(interval);
-            return 100;
-          }
-          return prev + 5;
-        });
-      }, 200);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      clearInterval(interval);
-      setUploadProgress(100);
-      setIsUploading(false);
-      
-      // Simulate processing
-      setIsProcessing(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsProcessing(false);
-      
-      // Navigate to result page with the document ID (in a real app this would come from the API)
-      navigate('/simplified-result/123');
-      console.log('Document uploaded and processed successfully!');
-      
+  
+      const formData = new FormData();
+      formData.append("file", files[0]);
+  
+      const authToken = localStorage.getItem("authToken");
+  
+      if (!authToken) {
+        console.error("Authentication token not found. Please log in.");
+        alert("Please log in to upload files.");
+        setIsUploading(false);
+        return;
+      }
+  
+      console.log("Uploading file:", files[0].name);
+      console.log("Auth Token:", authToken);
+  
+      const response = await axios.post(
+        "http://localhost:8000/api/users/upload/",
+        formData,
+        {
+          headers: {
+            "Authorization": `Token ${authToken}`, // Correct token format
+            "Content-Type": "multipart/form-data", // Ensures file upload works correctly
+          },
+          onUploadProgress: (progressEvent) => {
+            const progress = Math.round(
+              (progressEvent.loaded / progressEvent.total) * 100
+            );
+            setUploadProgress(progress);
+          },
+        }
+      );
+  
+      console.log("File uploaded successfully:", response.data);
+  
+      // Handle success response
+      alert("File uploaded successfully!");
+      navigate('/simplified-result/:id')
     } catch (error) {
-      console.error('Error uploading file:', error);
+      console.error("Error uploading file:", error);
+  
+      if (error.response) {
+        // Server response with error message
+        console.error("Server Error:", error.response.data);
+        alert(`Upload failed: ${error.response.data.error || "Unknown error"}`);
+      } else if (error.request) {
+        // No response from server
+        alert("Server is not responding. Please try again later.");
+      } else {
+        // Other errors
+        alert("An unexpected error occurred. Please try again.");
+      }
+    } finally {
       setIsUploading(false);
-      console.log('Failed to upload and process document. Please try again.');
     }
   };
+  
+
 
   // Start speech recognition
   const startSpeechRecognition = () => {

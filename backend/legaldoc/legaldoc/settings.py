@@ -65,6 +65,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',  # Use token authentication
     ],
+    #  'DEFAULT_PERMISSION_CLASSES': [
+    #     'rest_framework.permissions.IsAuthenticated',  # Restrict access to authenticated users
+    # ],
 }
 ROOT_URLCONF = "legaldoc.urls"
 

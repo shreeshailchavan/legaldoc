@@ -19,6 +19,10 @@ from django.contrib.auth import authenticate, login, logout
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
 from .utilities.text_summarizer import  summarize_text,LegalBertSimplifier
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser
 # Create your views here.
 
 
@@ -125,61 +129,53 @@ def user_logout(request):
 #             return JsonResponse({
 #                 "error": f"Error extracting text: {str(e)}"
 #             }, status=500)
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser
+from django.http import JsonResponse
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.conf import settings
+from datetime import datetime
+import os
 
-@csrf_exempt
-@login_required
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  # Ensure user is authenticated
+@parser_classes([MultiPartParser])  # Allow file uploads
 def file_upload(request):
-    if request.method == 'POST' and request.FILES.get('file'):
-        uploaded_file = request.FILES['file']
+    if 'file' not in request.FILES:
+        return JsonResponse({"error": "No file uploaded"}, status=400)
 
-        # Generate a unique file name: userid_timestamp_filename
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        unique_file_name = f"{request.user.id}_{timestamp}_{uploaded_file.name}"
-        file_path = os.path.join(settings.MEDIA_ROOT, 'uploads', unique_file_name)
+    uploaded_file = request.FILES['file']
 
-        # Save the file
-        path = default_storage.save(file_path, ContentFile(uploaded_file.read()))
+    # Generate a unique file name: userid_timestamp_filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    unique_file_name = f"{request.user.id}_{timestamp}_{uploaded_file.name}"
+    file_path = os.path.join(settings.MEDIA_ROOT, 'uploads', unique_file_name)
 
-        # Save file metadata in the database
-        user_file = UserFile(
-            user=request.user,  # Associate with the logged-in user
-            file_name=unique_file_name,
-            file_path=file_path,
+    # Save the file
+    path = default_storage.save(file_path, ContentFile(uploaded_file.read()))
 
-        )
-        user_file.save()
+    # Save file metadata in the database
+    user_file = UserFile.objects.create(
+        user=request.user,
+        file_name=unique_file_name,
+        file_path=file_path,
+    )
 
-        # Extract text from the saved file
-        try:
-            extracted_text = extract_text(file_path)
-            legal_res = summarize_text(extracted_text)
-            # encoded_original_text = encode_text(extracted_text)
-            # encoded_processed_text = encode_text(legal_res['simplified_text'])
+    try:
+        extracted_text = extract_text(file_path)
+        legal_res = summarize_text(extracted_text)
 
-            # Save the file with encoded texts
-            #
-            # user_file = UserFile(
-            #     user=request.user,  # Associate with the logged-in user
-            #     file_name=unique_file_name,
-            #     file_path=file_path,
-            #     encoded_original_text=encoded_original_text,  # Save encoded original text
-            #     encoded_processed_text=encoded_processed_text  # Save encoded processed text
-            # )
-            # user_file.save()
-            response_data = {
-                "message": "File uploaded and text extracted successfully!",
-                "file_url": f"{settings.MEDIA_URL}uploads/{unique_file_name}",
-                "legal" : legal_res,
-                "file_id": user_file.id  # Return the file ID for future reference
-            }
-            return JsonResponse(response_data, status=201)
-        except Exception as e:
-            # Handle errors during text extraction
-            return JsonResponse({
-                "error": f"Error extracting text: {str(e)}"
-            }, status=500)
-
-    return JsonResponse({"error": "No file uploaded"}, status=400)
+        response_data = {
+            "message": "File uploaded and text extracted successfully!",
+            "file_url": f"{settings.MEDIA_URL}uploads/{unique_file_name}",
+            "legal_res": legal_res,
+            "file_id": user_file.id  # Return the file ID for future reference
+        }
+        return JsonResponse(response_data, status=201)
+    except Exception as e:
+        return JsonResponse({"error": f"Error extracting text: {str(e)}"}, status=500)
 
 @csrf_exempt
 @login_required

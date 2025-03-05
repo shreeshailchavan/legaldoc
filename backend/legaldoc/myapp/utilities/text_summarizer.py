@@ -671,7 +671,7 @@ class LegalBertSimplifier:
 
         return None
 
-    def simplify_text(self, text, level=2, return_dict=False):
+    def simplify_text(self, text, level=3, return_dict=False):
         """
         Simplify legal text using InLegalBERT and rule-based techniques.
 

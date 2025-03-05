@@ -4,6 +4,7 @@ import { Upload } from 'lucide-react';
 const FileUpload = ({ handleFileUpload, isUploading, isProcessing }) => {
   if (isUploading || isProcessing) {
     return null; // Don't show when uploading/processing
+
   }
 
   return (
@@ -16,13 +17,16 @@ const FileUpload = ({ handleFileUpload, isUploading, isProcessing }) => {
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           Support for PDF, DOCX, and image files (JPG, PNG)
         </p>
+        <form action="" method="post" encType='multipart/formdata'>
+
         <input
           type="file"
           id="file-upload"
           className="hidden"
           accept=".pdf,.docx,.jpg,.jpeg,.png"
           onChange={(e) => handleFileUpload(e.target.files)}
-        />
+          />
+          </form>
         <label
           htmlFor="file-upload"
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer"
