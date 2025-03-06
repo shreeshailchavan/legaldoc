@@ -19,15 +19,16 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from .utilities.text_summarizer import  summarize_text,LegalBertSimplifier
+from .utilities.text_summarizer import  summarize_text
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
-from .utilities.text_summarizer import LegalBertSimplifier
+from dotenv import load_dotenv
 
 
-lb = LegalBertSimplifier()
+load_dotenv()
+
 # Create your views here.
 
 
@@ -106,45 +107,14 @@ def user_login(request):
         return Response({"error": "Invalid credentials"}, status=400)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])  # Ensure user is authenticated
 def user_logout(request):
     """API endpoint for user logout."""
     logout(request)
     return Response({"message": "Logged out successfully!"})
 
 
-# @csrf_exempt  # Disable CSRF for testing (enable CSRF protection in production)
-# def file_upload(request):
-#     if request.method == 'POST' and request.FILES.get('file'):
-#         uploaded_file = request.FILES['file']
-#
-#         # Define file path (inside media/uploads/ folder)
-#         file_path = os.path.join(settings.MEDIA_ROOT, 'uploads',  uploaded_file.name)
-#
-#         # Save file without using a model/database
-#         path = default_storage.save(file_path, ContentFile(uploaded_file.read()))
-#         # Extract text from the saved file
-#         try:
-#             extracted_text = extract_text(file_path)  # Call the text extraction function
-#             response_data = {
-#                 "message": "File uploaded and text extracted successfully!",
-#                 "file_url": f"{settings.MEDIA_URL}uploads/{uploaded_file.name}",
-#                 "extracted_text": extracted_text  # Include extracted text in the response
-#             }
-#             return JsonResponse(response_data, status=201)
-#         except Exception as e:
-#             # Handle errors during text extraction
-#             return JsonResponse({
-#                 "error": f"Error extracting text: {str(e)}"
-#             }, status=500)
-from rest_framework.decorators import api_view, permission_classes, parser_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser
-from django.http import JsonResponse
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-from django.conf import settings
-from datetime import datetime
-import os
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  # Ensure user is authenticated
@@ -154,6 +124,11 @@ def file_upload(request):
         return JsonResponse({"error": "No file uploaded"}, status=400)
 
     uploaded_file = request.FILES['file']
+    level = request.data.get('level');
+    print(type(level))
+    simpificationLevel = int(level)
+    print(type(simpificationLevel))
+
 
     # Generate a unique file name: userid_timestamp_filename
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -172,7 +147,7 @@ def file_upload(request):
 
     try:
         extracted_text = extract_text(file_path)
-        legal_res = summarize_text(extracted_text)
+        legal_res = summarize_text(extracted_text,simpificationLevel)
 
         response_data = {
             "message": "File uploaded and text extracted successfully!",
@@ -185,7 +160,7 @@ def file_upload(request):
         return JsonResponse({"error": f"Error extracting text: {str(e)}"}, status=500)
 
 @csrf_exempt
-@login_required
+@permission_classes([IsAuthenticated])  # Ensure user is authenticated
 def file_history(request):
     """Fetch the file history for the logged-in user."""
     user_files = UserFile.objects.filter(user=request.user).order_by('-uploaded_at')
@@ -201,6 +176,7 @@ def file_history(request):
     return JsonResponse({"file_history": file_history}, status=200)
 
 @csrf_exempt
+@permission_classes([IsAuthenticated])  # Ensure user is authenticated
 
 def cleanup_files(request):
     """Delete all files and database entries for the logged-in user."""
@@ -211,7 +187,8 @@ def cleanup_files(request):
         user_file.delete()  # Delete the database entry
 
     return JsonResponse({"message": "Files cleaned up successfully!"}, status=200)
-API_KEY = "AIzaSyC8Rq474EhiGZbgUxjeih7fzSAVQxLwYbo"
+
+API_KEY = os.getenv("API_KEY")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
 @api_view(["POST"])
@@ -223,7 +200,7 @@ def chat(request):
 
         headers = {"Content-Type": "application/json"}
         data = {
-            "contents": [{"parts": [{"text": prompt + " is a concise manner in 3 to 4 lines and simple for understanding"}]}]
+            "contents": [{"parts": [{"text": prompt + " in a concise manner in 3 to 4 lines and simple for understanding"}]}]
         }
 
         response = requests.post(GEMINI_URL, headers=headers, json=data)

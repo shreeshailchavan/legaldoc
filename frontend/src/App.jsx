@@ -40,19 +40,19 @@ const App = () => {
               <Route 
                 path="/dashboard" 
                 element={
-                  // <PrivateRoute>
+                  <PrivateRoute>
                     <Dashboard />
-                    // </PrivateRoute>
+                     </PrivateRoute>
                   }
                   />
               <Route 
                 path="/simplified-result/:id" 
                 element={
-                  // <PrivateRoute>
+                  <PrivateRoute>
                   
                   <SimplifiedResultPage />
                   
-                  // </PrivateRoute>
+                   </PrivateRoute>
                 }
                 />
               <Route path="/" element={<Navigate to="/login" />} />

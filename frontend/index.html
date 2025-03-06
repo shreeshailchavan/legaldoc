@@ -40,13 +40,17 @@
     <!-- Google Translate Script -->
      
     <script type="text/javascript">
-      window.addEventListener("beforeunload", async function () {
-    await fetch("http://localhost:8000/api/users/cleanup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "User closed the browser", timestamp: new Date().toISOString() }),
+    window.addEventListener("beforeunload", function (event) {
+    const url = "http://localhost:8000/api/users/cleanup/";
+    const data = JSON.stringify({
+        message: "User closed the browser",
+        timestamp: new Date().toISOString()
     });
+
+    // Use sendBeacon for reliability during browser unload
+    navigator.sendBeacon(url, data);
 });
+
 
       function googleTranslateElementInit() {
         new google.translate.TranslateElement(

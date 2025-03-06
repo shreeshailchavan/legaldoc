@@ -31,7 +31,7 @@ const Sidebar = ({
         <div>
           <div className="p-4 flex items-center justify-between">
             {sidebarOpen ? (
-              <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">Legal Simplifier</h1>
+              <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">Docufy</h1>
             ) : (
               <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">LS</h1>
             )}

@@ -28,7 +28,7 @@ const Dashboard = () => {
   
   const navigate = useNavigate();
   const  { saveResult  } = useResult(); // Access context function
-
+  const [level,setLevel] = useState(1);
   const { currentLanguage } = useBrowserTranslation();
   const [darkMode, setDarkMode] = useState(() => 
     localStorage.getItem('darkMode') === 'true' || 
@@ -108,6 +108,10 @@ const Dashboard = () => {
     setIntroEnabled(true);
   };
 
+  const setSimplificationLevel = (lev) =>{
+    setLevel(lev)
+  }
+
 
   // Apply dark mode class to body
   useEffect(() => {
@@ -178,11 +182,19 @@ const Dashboard = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+
+    const response = await axios.post("http://localhost:8000/api/users/cleanup/",{
+      Authorization : `Token ${localStorage.getItem('authToken')}`
+    });
+    const res = await axios.post("http://localhost:8000/api/users/logout/",{
+      Authorization : `Token ${localStorage.getItem('authToken')}`
+    })
     localStorage.removeItem('authToken');
     navigate('/login');
+    
   };
-  const handleFileUpload = async (files) => {
+  const handleFileUpload = async (files,level) => {
     if (!files || files.length === 0) {
       console.error("No file selected.");
       return;
@@ -194,6 +206,7 @@ const Dashboard = () => {
 
       const formData = new FormData();
       formData.append("file", files[0]);
+      formData.append("level",level);
 
       const authToken = localStorage.getItem("authToken");
 
@@ -341,7 +354,7 @@ const Dashboard = () => {
             <div className="p-4 flex items-center justify-between">
               {sidebarOpen ? (
                 <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                  Legal Simplifier
+                  Docufy
                 </h1>
               ) : (
                 <h1 className="text-xl font-bold text-blue-600 dark:text-blue-400">LS</h1>
@@ -610,7 +623,7 @@ const Dashboard = () => {
                       id="file-upload"
                       className="hidden"
                       accept=".pdf,.docx,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileUpload(e.target.files)}
+                      onChange={(e) => handleFileUpload(e.target.files,level)}
                     />
                     <label
                       htmlFor="file-upload"
@@ -625,18 +638,19 @@ const Dashboard = () => {
                       Simplification Level
                     </h4>
                     <div className="flex justify-center space-x-4">
-                      {['Mild', 'Moderate', 'Extreme'].map((level) => (
-                        <div key={level} className="flex items-center">
+                      {[{le:'Mild',val:1}, {le:'Moderate',val:2}, {le:'Extreme',val:3}].map((l) => (
+                        <div key={l.le} className="flex items-center">
                           <input
                             type="radio"
-                            id={level}
+                            id={l.le}
                             name="simplification-level"
-                            value={level}
-                            defaultChecked={level === 'Moderate'}
+                            value={l.val}
+                            defaultChecked={level === l.val}
                             className="mr-2"
+                            onChange={(e) => setSimplificationLevel(e.target.value)}
                           />
-                          <label htmlFor={level} className="text-sm text-gray-600 dark:text-gray-400">
-                            {level}
+                          <label htmlFor={l.le} className="text-sm text-gray-600 dark:text-gray-400">
+                            {l.le}
                           </label>
                         </div>
                       ))}
