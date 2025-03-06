@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import create_user, get_users, get_user, update_user, delete_user,file_upload , file_history , cleanup_files ,user_login , user_logout
+from .views import create_user, get_users, get_user, update_user, delete_user,file_upload , file_history , cleanup_files ,user_login , user_logout,chat
 
 urlpatterns = [
     path('users/', get_users, name='get_users'),
@@ -12,4 +12,6 @@ urlpatterns = [
     path('users/history/', file_history, name='file_history'),
     path('users/login/', user_login, name='login'),
     path('users/logout/', user_logout, name='logout'),
+    path('users/chat/',chat)
+    
 ]

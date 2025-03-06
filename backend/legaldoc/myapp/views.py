@@ -9,6 +9,7 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 import os
 from django.views.decorators.csrf import csrf_exempt
+import requests
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from .utilities.text_extractor import extract_text
 from rest_framework.response import Response
@@ -23,7 +24,13 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
+from .utilities.text_summarizer import LegalBertSimplifier
+
+
+lb = LegalBertSimplifier()
 # Create your views here.
+
+
 
 
 @api_view(['GET'])
@@ -194,7 +201,7 @@ def file_history(request):
     return JsonResponse({"file_history": file_history}, status=200)
 
 @csrf_exempt
-@login_required
+
 def cleanup_files(request):
     """Delete all files and database entries for the logged-in user."""
     user_files = UserFile.objects.filter(user=request.user)
@@ -204,3 +211,38 @@ def cleanup_files(request):
         user_file.delete()  # Delete the database entry
 
     return JsonResponse({"message": "Files cleaned up successfully!"}, status=200)
+API_KEY = "AIzaSyC8Rq474EhiGZbgUxjeih7fzSAVQxLwYbo"
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
+
+@api_view(["POST"])
+def chat(request):
+    try:
+        prompt = request.data.get("prompt")
+        if not prompt:
+            return Response({"error": "Prompt is required"}, status=400)
+
+        headers = {"Content-Type": "application/json"}
+        data = {
+            "contents": [{"parts": [{"text": prompt + " is a concise manner in 3 to 4 lines and simple for understanding"}]}]
+        }
+
+        response = requests.post(GEMINI_URL, headers=headers, json=data)
+
+        response_data = response.json()
+        
+        print("Gemini API Response:", response_data)  # ✅ Debugging
+
+        # ✅ Ensure response_data contains 'candidates' instead of 'contents'
+        if "candidates" in response_data and len(response_data["candidates"]) > 0:
+            candidate = response_data["candidates"][0]
+
+            if "content" in candidate and "parts" in candidate["content"] and len(candidate["content"]["parts"]) > 0:
+                response_text = candidate["content"]["parts"][0]["text"]
+                return Response({"response": response_text}, status=200)
+
+        return Response({"error": "Invalid API response structure"}, status=500)
+
+    except Exception as e:
+        print("Exception:", str(e))  # ✅ Print error message
+        print(traceback.format_exc())  # ✅ Print full error traceback
+        return Response({"error": str(e)}, status=500)

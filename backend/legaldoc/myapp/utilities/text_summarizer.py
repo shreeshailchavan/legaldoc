@@ -122,7 +122,7 @@
 #         result = ' '.join(simplified_sentences)
 
 #         # Clean up spacing and punctuation
-#         result = self._clean_text(result)
+#         result = self.clean_text(result)
 
 #         return result
 
@@ -195,7 +195,7 @@
 
 #         return ' '.join(simplified_words)
 
-#     def _clean_text(self, text):
+#     def clean_text(self, text):
 #         """Clean up the simplified text."""
 #         # Fix spacing
 #         text = re.sub(r'\s+', ' ', text)
@@ -794,7 +794,7 @@ class LegalBertSimplifier:
                 numerical_replacements[before] = after
 
         # Clean up spacing and punctuation
-        result = self._clean_text(result, level)
+        result = self.clean_text(result, level)
 
         # For extreme simplification, break up long sentences further
         if level == 3:
@@ -806,7 +806,7 @@ class LegalBertSimplifier:
 
         # Prepare structured output dictionary
         output = {
-            'original_text': self._clean_text(original_text),
+            'original_text': self.clean_text(original_text),
             'simplified_text': result,
             'simplification_level': level,
             'level_name': level_key,
@@ -1184,7 +1184,7 @@ class LegalBertSimplifier:
 
         return text
 
-    def _clean_text(self, text, level=None):
+    def clean_text(self, text, level=None):
         """
         Clean up the simplified text.
 

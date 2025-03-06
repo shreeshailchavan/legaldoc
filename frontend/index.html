@@ -35,10 +35,19 @@
     <script type="module" src="/src/main.jsx"></script>
     
     <!-- Hidden Google Translate element at the end of the body -->
-    <div id="google_translate_element" aria-hidden="true"></div>
+    <!-- <div id="google_translate_element" aria-hidden="true"></div> -->
     
     <!-- Google Translate Script -->
+     
     <script type="text/javascript">
+      window.addEventListener("beforeunload", async function () {
+    await fetch("http://localhost:8000/api/users/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "User closed the browser", timestamp: new Date().toISOString() }),
+    });
+});
+
       function googleTranslateElementInit() {
         new google.translate.TranslateElement(
           {

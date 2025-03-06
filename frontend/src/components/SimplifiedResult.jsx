@@ -11,6 +11,7 @@ import {
   MessageSquare, 
   Check,
   Volume2,
+  Mic,
   VolumeX
 } from 'lucide-react';
 
@@ -24,12 +25,20 @@ const SimplifiedResultPage = () => {
   const [askingQuestion, setAskingQuestion] = useState(false);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechText, setSpeechText] = useState('');
   const [showAnswer, setShowAnswer] = useState(false);
 
   const { results } = useResult();
   const result = results[id]; 
   console.log(results)
   console.log(result);
+
+
+  // Text-to-Speech States
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audioSource, setAudioSource] = useState(null);
+  const audioRef = useRef(null);
   
   useEffect(() => {
     const fetchDocument = async () => {
@@ -233,29 +242,101 @@ const SimplifiedResultPage = () => {
     setAskingQuestion(true);
     
     try {
-      // Simulate API call for question answering
+      // Simulate API call delay (optional)
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock answers
-      const answers = [
-        "The security deposit is $1,500, which is the same amount as one month's rent.",
-        "The lease term is 12 months, starting March 1, 2025 and ending February 28, 2026.",
-        "Yes, late payments may result in a $50 daily late fee.",
-        "According to the agreement, the tenant can only use the property as a private residence. No business activities are allowed.",
-        "The agreement specifies that only John Smith, Jane Smith (spouse), and Bobby Smith (child) can live in the apartment. Anyone else would need written permission from the landlord."
-      ];
-      
-      // Pick a random answer for demo purposes
-      const randomAnswer = answers[Math.floor(Math.random() * answers.length)];
-      setAnswer(randomAnswer);
+    
+      // Retrieve authentication token
+      const authToken = localStorage.getItem("authToken");
+    
+      if (!authToken) {
+        console.error("No authentication token found.");
+        return;
+      }
+    
+      // Ensure 'id' exists in 'results'
+      if (!results[id]) {
+        console.error("Invalid ID. Unable to retrieve legal context.");
+        return;
+      }
+    
+      // Prepare headers
+      const headers = {
+        "Authorization": `Token ${authToken}`,
+        "Content-Type": "multipart/form-data",
+      };
+    
+      // Prepare form data
+      const formData = new FormData();
+      formData.append("prompt", question + " for this context " + results[id].legal_res.original_text);
+    
+      // Send request to backend (correct headers placement)
+      const response = await axios.post("http://localhost:8000/api/users/chat/", formData, { headers });
+    
+      // Extract the AI response
+      const answer = response.data.response;
+    
+      // Update UI with the answer
+      setAnswer(answer);
       setShowAnswer(true);
-      
+    
     } catch (error) {
-      console.error('Error asking question:', error);
-      console.log('Failed to process your question. Please try again.');
+      console.error("Error asking question:", error);
+      console.log("Failed to process your question. Please try again.");
     } finally {
       setAskingQuestion(false);
     }
+  };
+
+   // Start speech recognition
+   const startSpeechRecognition = () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      console.log('Speech recognition is not supported in your browser.');
+      return;
+    }
+    
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    
+    recognition.onstart = () => {
+      setIsRecording(true);
+      console.log('Speech recognition started. Speak now...');
+    };
+    
+    recognition.onresult = (event) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+      
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript;
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+      
+      setSpeechText(finalTranscript || interimTranscript);
+    };
+    
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      setIsRecording(false);
+      console.log('Speech recognition error. Please try again.');
+    };
+    
+    recognition.onend = () => {
+      setIsRecording(false);
+    };
+    
+    recognition.start();
+    
+    // Stop recording after 30 seconds
+    setTimeout(() => {
+      if (recognition) {
+        recognition.stop();
+      }
+    }, 30000);
   };
 
   // Loading State
@@ -471,6 +552,7 @@ const SimplifiedResultPage = () => {
               onChange={(e) => setQuestion(e.target.value)}
               className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
             />
+            {/* <input type="text" id="user_question" name="original_text" value={results[id].legal_res.original_text} hidden /> */}
             <button
               onClick={askQuestion}
               disabled={askingQuestion || !question.trim()}
@@ -488,7 +570,64 @@ const SimplifiedResultPage = () => {
                 'Ask Question'
               )}
             </button>
+
+            <button 
+              className="flex items-center justify-center h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white rounded-lg transition duration-150 ease-in-out speech-input-intro"
+              onClick={startSpeechRecognition}
+              disabled={isRecording}
+            >
+              <Mic size={18} className="mr-2" />
+              <span>Speech Input</span>
+            </button>
           </div>
+
+
+          {/* Speech Recognition Section */}
+          {(isRecording || speechText) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8 speech-input-intro">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+                  Speech Recognition
+                </h2>
+                <div className="flex space-x-2">
+                  {isRecording ? (
+                    <button 
+                      onClick={() => setIsRecording(false)}
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                    >
+                      Stop Recording
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={startSpeechRecognition}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                    >
+                      Start Recording
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={askQuestion}
+                    disabled={!speechText.trim()}
+                    className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50"
+                  >
+                    Process Text
+                  </button>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 min-h-24 max-h-48 overflow-y-auto">
+                {speechText ? (
+                  <p className="text-gray-800 dark:text-gray-200">{speechText}</p>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 italic">
+                    {isRecording ? 'Listening...' : 'Speech will appear here...'}
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           
           {showAnswer && (
             <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
